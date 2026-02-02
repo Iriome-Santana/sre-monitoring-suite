@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""
+Script de monitoreo de uso de disco.
+Autor: Iriome
+Fecha: 02/02/2026
+"""
+
 import subprocess
 import sys
 import logging
