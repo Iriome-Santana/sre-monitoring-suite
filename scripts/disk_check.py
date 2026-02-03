@@ -9,6 +9,9 @@ import subprocess
 import sys
 import logging
 import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from notifier import send_alert
 
 logging.basicConfig(
     level=logging.INFO,
@@ -72,8 +75,24 @@ if use_percent < warning_threshold:
     logging.info(f"OK - Uso de disco: {use_percent}%")
     sys.exit(0)
 elif use_percent < critical_threshold:
-    logging.warning(f"WARNING - Uso de disco: {use_percent}%")
+    message = f"Uso de disco en {DISK_PATH}: {use_percent}%"
+    logging.warning(f"WARNING - {message}")
+    
+    send_alert(
+        title= "ADVERTENCIA de Disco",
+        message= message,
+        level= "WARNING"
+    )
     sys.exit(1)
+
 else:
-    logging.error(f"CRITICAL - Uso de disco: {use_percent}%")
+    message = f"Uso de disco en {DISK_PATH}: {use_percent}%"
+    logging.error(f"CRITICAL - {message}")
+    
+    # Enviar alerta
+    send_alert(
+        title="CRÍTICO: Disco Lleno",
+        message=message,
+        level="CRITICAL"
+    )
     sys.exit(2)

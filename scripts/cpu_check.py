@@ -10,6 +10,8 @@ import sys
 import logging
 import os
 import re
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from notifier import send_alert
 
 logging.basicConfig(
     level=logging.INFO,
@@ -76,14 +78,24 @@ if idle_percent >= WARNING_THRESHOLD:
     sys.exit(0)
     
 elif idle_percent >= CRITICAL_THRESHOLD:
-    logging.warning(
-        f"WARNING - CPU idle: {idle_percent}% (uso: {usage_percent})"
+    message=f"WARNING - CPU idle: {idle_percent}% (uso: {usage_percent}"
+    logging.warning(message)
+    
+    send_alert(
+        title= "Advertencia de CPU",
+        message= message,
+        level= "WARNING"
     )
     sys.exit(1)
     
 else:
-    logging.error(
-    f"CRITICAL - CPU idle: {idle_percent}% (uso: {usage_percent}%)"
+    message= f"CRITICAL - CPU idle: {idle_percent}% (uso: {usage_percent}%"
+    logging.error(message)
+    
+    send_alert(
+        title= "CRITICO uso de CPU",
+        message= message,
+        level= "CRITICAL"
     )
     sys.exit(2)
     

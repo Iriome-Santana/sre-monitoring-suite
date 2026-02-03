@@ -9,6 +9,8 @@ import subprocess
 import logging
 import sys
 import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from notifier import send_alert
 
 logging.basicConfig(
     level=logging.INFO,
@@ -70,16 +72,22 @@ if available_percent >= WARNING_THRESHOLD:
     sys.exit(0)
     
 elif available_percent >= CRITICAL_THRESHOLD:
-    logging.warning(
-        f"WARNING - Memoria disponible: {available_percent}% "
-        f"({available_mb}MB de {total_mb}MB)"
+    message = f"Memoria disponible: {available_percent}% ({available_mb}MB de {total_mb}MB)"
+    logging.warning(message)
+    send_alert(
+        title="⚠️ Advertencia de Memoria",
+        message=message,
+        level="WARNING"
     )
     sys.exit(1)
     
 else:
-    logging.error(
-        f"CRITICAL - Memoria disponible: {available_percent}% "
-        f"({available_mb}MB de {total_mb}MB)"
+    message = f"Memoria disponible: {available_percent}% ({available_mb}MB de {total_mb}MB)"
+    logging.error(message)
+    send_alert(
+        title="🔥 CRÍTICO: Memoria Baja",
+        message=message,
+        level="CRITICAL"
     )
     sys.exit(2)
     
