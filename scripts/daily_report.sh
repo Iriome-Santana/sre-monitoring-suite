@@ -56,5 +56,31 @@ fi
 echo "" >> $REPORT_FILE
 echo "========================================" >> $REPORT_FILE
 
+echo "" >> $REPORT_FILE
+echo "" >> $REPORT_FILE
+
+# ==========================================
+# SECCIÓN: CPU
+# ==========================================
+
+echo "--- MONITOREO DE CPU ---" >> $REPORT_FILE
+echo "" >> $REPORT_FILE
+
+CPU_LOG="$LOG_DIR/cpu_check.log"
+
+if [ -f "$CPU_LOG" ]; then
+    echo "Checks totales: $(grep -c 'Chequeando CPU' $CPU_LOG)" >> $REPORT_FILE
+    echo "OK: $(grep -c 'OK - CPU idle' $CPU_LOG)" >> $REPORT_FILE
+    echo "Warnings: $(grep -c 'WARNING - CPU idle' $CPU_LOG)" >> $REPORT_FILE
+    echo "Críticos: $(grep -c 'CRITICAL - CPU idle' $CPU_LOG)" >> $REPORT_FILE
+    echo "" >> $REPORT_FILE
+    echo "Última verificación:" >> $REPORT_FILE
+    tail -n 2 $CPU_LOG >> $REPORT_FILE
+else
+    echo "No hay datos de CPU disponibles" >> $REPORT_FILE
+fi
+
+echo "" >> $REPORT_FILE
+echo "========================================" >> $REPORT_FILE
 
 cat $REPORT_FILE
