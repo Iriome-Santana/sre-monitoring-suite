@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """
 Script de monitoreo de uso de disco.
 Autor: Iriome
@@ -6,7 +7,6 @@ Fecha: 02/02/2026
 """
     
 import subprocess
-import sys
 import logging
 import os
 import sys
@@ -20,7 +20,6 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-# Leer configuración
 DISK_PATH = os.environ.get("DISK_PATH", "/")
 WARNING_THRESHOLD = os.environ.get("WARNING", "80")
 CRITICAL_THRESHOLD = os.environ.get("CRITICAL", "90")

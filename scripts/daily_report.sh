@@ -21,9 +21,9 @@ echo "" >> $REPORT_FILE
 
 if [ -f "$DISK_LOG" ]; then
     echo "Checks totales: $(grep -c 'Chequeando disco' $DISK_LOG)" >> $REPORT_FILE
-    echo "OK: $(grep -c 'OK - Uso de disco' $DISK_LOG)" >> $REPORT_FILE
-    echo "Warnings: $(grep -c 'WARNING - Uso de disco' $DISK_LOG)" >> $REPORT_FILE
-    echo "Críticos: $(grep -c 'CRITICAL - Uso de disco' $DISK_LOG)" >> $REPORT_FILE
+    echo "OK: $(grep -c 'OK: Uso de disco' $DISK_LOG)" >> $REPORT_FILE
+    echo "Warnings: $(grep -c 'WARNING: Uso de disco' $DISK_LOG)" >> $REPORT_FILE
+    echo "Críticos: $(grep -c 'CRITICAL: Uso de disco' $DISK_LOG)" >> $REPORT_FILE
     echo "" >> $REPORT_FILE
     echo "Última verificación:" >> $REPORT_FILE
     tail -n 2 $DISK_LOG >> $REPORT_FILE
@@ -43,9 +43,9 @@ echo "" >> $REPORT_FILE
 
 if [ -f "$MEMORY_LOG" ]; then
     echo "Checks totales: $(grep -c 'Chequeando memoria' $MEMORY_LOG)" >> $REPORT_FILE
-    echo "OK: $(grep -c 'OK - Memoria disponible' $MEMORY_LOG)" >> $REPORT_FILE
-    echo "Warnings: $(grep -c 'WARNING - Memoria disponible' $MEMORY_LOG)" >> $REPORT_FILE
-    echo "Críticos: $(grep -c 'CRITICAL - Memoria disponible' $MEMORY_LOG)" >> $REPORT_FILE
+    echo "OK: $(grep -c 'OK: Memoria disponible' $MEMORY_LOG)" >> $REPORT_FILE
+    echo "Warnings: $(grep -c 'WARNING: Memoria disponible' $MEMORY_LOG)" >> $REPORT_FILE
+    echo "Críticos: $(grep -c 'CRITICAL: Memoria disponible' $MEMORY_LOG)" >> $REPORT_FILE
     echo "" >> $REPORT_FILE
     echo "Última verificación:" >> $REPORT_FILE
     tail -n 2 $MEMORY_LOG >> $REPORT_FILE
@@ -70,9 +70,9 @@ CPU_LOG="$LOG_DIR/cpu_check.log"
 
 if [ -f "$CPU_LOG" ]; then
     echo "Checks totales: $(grep -c 'Chequeando CPU' $CPU_LOG)" >> $REPORT_FILE
-    echo "OK: $(grep -c 'OK - CPU idle' $CPU_LOG)" >> $REPORT_FILE
-    echo "Warnings: $(grep -c 'WARNING - CPU idle' $CPU_LOG)" >> $REPORT_FILE
-    echo "Críticos: $(grep -c 'CRITICAL - CPU idle' $CPU_LOG)" >> $REPORT_FILE
+    echo "OK: $(grep -c 'OK: Uso de CPU' $CPU_LOG)" >> $REPORT_FILE
+    echo "Warnings: $(grep -c 'WARNING: Uso de CPU' $CPU_LOG)" >> $REPORT_FILE
+    echo "Críticos: $(grep -c 'CRITICAL: Uso de CPU' $CPU_LOG)" >> $REPORT_FILE
     echo "" >> $REPORT_FILE
     echo "Última verificación:" >> $REPORT_FILE
     tail -n 2 $CPU_LOG >> $REPORT_FILE

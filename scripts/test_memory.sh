@@ -11,5 +11,6 @@ echo ""
 echo "2. Check con umbrales altos (forzar warning):"
 WARNING=95 CRITICAL=90 python3 ~/sre/scripts/memory_check.py
 echo "Exit code: $?"
+echo ""
 
 
