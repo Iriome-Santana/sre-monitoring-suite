@@ -1,0 +1,11 @@
+# Configuración global de Prometheus
+global:
+  scrape_interval: 15s  # Cada cuánto scrapear métricas
+  evaluation_interval: 15s  # Cada cuánto evaluar reglas
+
+# Configuración de qué métricas recolectar
+scrape_configs:
+  # Job 1: Métricas de tu exporter
+  - job_name: 'sre-monitoring-suite'
+    static_configs:
+      - targets: ['host.docker.internal:8000']

@@ -32,6 +32,64 @@ Este proyecto busca:
 - Reporte diario agregado
 - Limpieza automática de logs antiguos
 
+## 📊 Visualización con Grafana
+
+Este proyecto incluye un stack completo de observabilidad con Prometheus y Grafana para visualización de métricas en tiempo real.
+
+### Dashboard
+
+El dashboard muestra:
+- **Uso de disco**: Gráfico de línea con tendencia temporal
+- **Memoria disponible**: Gauge con thresholds de color (rojo < 20%, amarillo 20-40%, verde > 40%)
+- **CPU idle**: Gráfico de línea mostrando porcentaje de CPU disponible
+
+![Dashboard de Grafana](docs/dashboard-screenshot.png)
+
+### Arquitectura de Observabilidad
+```
+┌──────────────────┐
+│ metrics_exporter │ → Recolecta métricas del sistema cada 15s
+└────────┬─────────┘
+         │ HTTP :8000/metrics
+         ↓
+┌──────────────────┐
+│   Prometheus     │ → Almacena time-series data
+└────────┬─────────┘
+         │ PromQL queries
+         ↓
+┌──────────────────┐
+│     Grafana      │ → Visualización en dashboards
+└──────────────────┘
+```
+
+### Inicio Rápido
+```bash
+# 1. Iniciar exporter de métricas
+python3 src/metrics_exporter.py &
+
+# 2. Iniciar Prometheus y Grafana con Docker Compose
+docker-compose up -d
+
+# 3. Acceder a los servicios
+# - Métricas raw: http://localhost:8000/metrics
+# - Prometheus UI: http://localhost:9090
+# - Grafana: http://localhost:3000 (admin/admin)
+```
+
+### Detener servicios
+```bash
+# Detener Prometheus y Grafana
+docker-compose down
+
+# Detener exporter
+pkill -f metrics_exporter.py
+```
+```
+
+**Paso 2.3: Guardar**
+```
+Ctrl+O → Enter → Ctrl+X
+
 ## 🏗️ Arquitectura del Código
 
 ### Patrón de Diseño

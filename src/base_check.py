@@ -13,7 +13,6 @@ from typing import Literal
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notifier import send_alert
 
-# Tipos
 State = Literal["OK", "WARNING", "CRITICAL"]
 
 STATE_DIR = os.environ.get("STATE_DIR", "/tmp")
@@ -35,6 +34,9 @@ class BaseCheck:
         """
         self.check_name = check_name
         self.state_file = f"{STATE_DIR}/{check_name}.state"
+        
+        os.makedirs(os.path.dirname(self.state_file), exist_ok=True)
+
         
         # Configurar logging
         logging.basicConfig(
