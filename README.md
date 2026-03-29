@@ -61,7 +61,7 @@ El dashboard muestra:
 - **Memoria disponible**: Gauge con thresholds de color (rojo < 20%, amarillo 20-40%, verde > 40%)
 - **CPU idle**: Gráfico de línea mostrando porcentaje de CPU disponible
 
-![Dashboard de Grafana](docs/dashboard-screenshot.png)
+![Dashboard de Grafana](docs/dashboard_monitoring.png)
 
 ### Arquitectura de Observabilidad
 ```
