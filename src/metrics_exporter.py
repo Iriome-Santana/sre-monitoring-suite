@@ -14,6 +14,7 @@ import time
 import logging
 import re
 import os
+from logging_config import setup_logging
 
 METRICS_PORT = int(os.environ.get("METRICS_PORT", "8000"))
 SCRAPE_INTERVAL = int(os.environ.get("SCRAPE_INTERVAL", "15"))
@@ -23,13 +24,7 @@ LOG_DIR = os.path.expanduser("~/sre-monitoring-suite/logs")
 
 os.makedirs(LOG_DIR, exist_ok=True)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler(f"{LOG_DIR}/metrics_exporter.log"),
-        logging.StreamHandler()
-    ])
+setup_logging("metrics_exporter")
 
 def collect_disk_usage():
     """Recoge el uso de disco usando df."""

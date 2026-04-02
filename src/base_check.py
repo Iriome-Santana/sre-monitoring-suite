@@ -8,6 +8,7 @@ import logging
 import sys
 import os
 from typing import Literal
+from logging_config import setup_logging
 
 # Añadir directorio al path para importar notifier
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -38,12 +39,7 @@ class BaseCheck:
         os.makedirs(os.path.dirname(self.state_file), exist_ok=True)
 
         
-        # Configurar logging
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s - %(levelname)s - %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
-        )
+        setup_logging(check_name)
     
     def load_last_state(self) -> State:
         """
