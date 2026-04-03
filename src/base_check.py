@@ -8,15 +8,20 @@ import logging
 import sys
 import os
 from typing import Literal
-from logging_config import setup_logging
 
-# Añadir directorio al path para importar notifier
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from notifier import send_alert
+try:
+    from .logging_config import setup_logging
+    from .notifier import send_alert
+except ImportError:
+    from logging_config import setup_logging
+    from notifier import send_alert
 
 State = Literal["OK", "WARNING", "CRITICAL"]
 
-STATE_DIR = os.environ.get("STATE_DIR", "/tmp")
+
+def get_state_dir() -> str:
+    """Lee el directorio de estado desde el entorno."""
+    return os.environ.get("STATE_DIR", "/tmp")
 
 
 
@@ -34,7 +39,7 @@ class BaseCheck:
             check_name: Nombre del check (disk, memory, cpu, etc.)
         """
         self.check_name = check_name
-        self.state_file = f"{STATE_DIR}/{check_name}.state"
+        self.state_file = f"{get_state_dir()}/{check_name}.state"
         
         os.makedirs(os.path.dirname(self.state_file), exist_ok=True)
 

@@ -14,7 +14,11 @@ import time
 import logging
 import re
 import os
-from logging_config import setup_logging
+
+try:
+    from .logging_config import setup_logging
+except ImportError:
+    from logging_config import setup_logging
 
 METRICS_PORT = int(os.environ.get("METRICS_PORT", "8000"))
 SCRAPE_INTERVAL = int(os.environ.get("SCRAPE_INTERVAL", "15"))
