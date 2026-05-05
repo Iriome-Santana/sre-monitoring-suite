@@ -1,230 +1,178 @@
-# SRE Monitoring Suite (Python)
+# SRE Monitoring Suite
 
 ![Tests](https://github.com/Iriome-Santana/sre-monitoring-suite/actions/workflows/tests.yml/badge.svg)
 ![Python Version](https://img.shields.io/badge/python-3.12-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Coverage](https://img.shields.io/badge/coverage-91%25-brightgreen)
 
-Sistema de monitoreo local desarrollado en Python para supervisar
-uso de CPU, memoria RAM y disco, con alertas automáticas,
-gestión de estado para evitar alertas repetidas,tests automatizados con Github Actions y métricas conectadas a Prometheus y con visualización en Grafa.
+Sistema de monitoreo local desarrollado en Python para supervisar uso de CPU, memoria RAM y disco, con alertas automáticas, gestión de estado para evitar alertas repetidas, tests automatizados con GitHub Actions y métricas conectadas a Prometheus con visualización en Grafana.
 
-Proyecto orientado a prácticas reales de Site Reliability Engineering:
-observabilidad, alerting, automatización y respuesta a incidentes.
+Proyecto orientado a prácticas reales de Site Reliability Engineering: observabilidad, alerting, automatización y respuesta a incidentes.
 
+---
 
 ## Table of Contents
-- Problem Statement
-- Features
-- Observability Stack
-- Quick Start
-- Architecture
-- Production Readiness
-- Installation
-- Configuration
 
-## Problem Statement
+- [What is this?](#what-is-this)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Observability Stack](#observability-stack)
+- [State Management](#state-management)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Automation (cron)](#automation-cron)
+- [Daily Report](#daily-report)
+- [Architecture Decision Records](#architecture-decision-records)
+- [Production Readiness Gap Analysis](#production-readiness-gap-analysis)
+- [Further Documentation](#further-documentation)
 
-En muchos sistemas pequeños o personales no existe monitoreo básico.
-Los problemas (disco lleno, CPU saturada, fuga de memoria) se detectan
-cuando el sistema ya está degradado o caído.
+---
 
-Este proyecto busca:
-- Detectar problemas de recursos antes del fallo
-- Evitar alertas repetidas (alert fatigue)
-- Enviar notificaciones claras y accionables
-- Automatizar la supervisión con herramientas simples
+## What is this?
+
+En muchos sistemas pequeños o personales no existe monitoreo básico. Los problemas — disco lleno, CPU saturada, fuga de memoria — se detectan cuando el sistema ya está degradado o caído.
+
+Este proyecto busca detectar problemas de recursos antes del fallo, evitar alertas repetidas (alert fatigue), enviar notificaciones claras y accionables, y automatizar la supervisión con herramientas simples.
+
+No pretende reemplazar soluciones como Prometheus o Datadog. Fue diseñado para entender cómo funciona el monitoreo desde cero, implementar alerting sin dependencias externas, practicar gestión de estado y simular responsabilidades reales de SRE en entornos pequeños.
+
+---
 
 ## Features
 
-- Monitoreo de CPU basado en idle time (top)
-- Monitoreo de memoria usando memoria disponible real (free)
-- Monitoreo de uso de disco por path configurable (df)
+- Monitoreo de CPU basado en idle time (`top`)
+- Monitoreo de memoria usando memoria disponible real (`free`)
+- Monitoreo de uso de disco por path configurable (`df`)
 - Umbrales configurables vía variables de entorno
 - Gestión de estado para detectar cambios (OK → WARNING → CRITICAL)
 - Alertas y recoveries enviados a Discord
 - Logs detallados por cada ejecución
-- Scripts de testing manual
 - Reporte diario agregado
 - Limpieza automática de logs antiguos
-- Tests automatizados con Pytest y Github Actions
-- Métricas con Prometheus
+- Tests automatizados con pytest y GitHub Actions (91% de cobertura)
+- Métricas expuestas para Prometheus + dashboards en Grafana
 
-## 📊 Visualización con Grafana
-
-Este proyecto incluye un stack completo de observabilidad con Prometheus y Grafana para visualización de métricas en tiempo real.
-
-### Dashboard
-
-El dashboard muestra:
-- **Uso de disco**: Gráfico de línea con tendencia temporal
-- **Memoria disponible**: Gauge con thresholds de color (rojo < 20%, amarillo 20-40%, verde > 40%)
-- **CPU idle**: Gráfico de línea mostrando porcentaje de CPU disponible
-
-![Dashboard de Grafana](docs/dashboard_monitoring.png)
-
-### Arquitectura de Observabilidad
-```
-┌──────────────────┐
-│ metrics_exporter │ → Recolecta métricas del sistema cada 15s
-└────────┬─────────┘
-         │ HTTP :8000/metrics
-         ↓
-┌──────────────────┐
-│   Prometheus     │ → Almacena time-series data
-└────────┬─────────┘
-         │ PromQL queries
-         ↓
-┌──────────────────┐
-│     Grafana      │ → Visualización en dashboards
-└──────────────────┘
-```
-
-### Inicio Rápido
-```bash
-# 1. Iniciar exporter de métricas
-python3 src/metrics_exporter.py &
-
-# 2. Iniciar Prometheus y Grafana con Docker Compose
-docker-compose up -d
-
-# 3. Acceder a los servicios
-# - Métricas raw: http://localhost:8000/metrics
-# - Prometheus UI: http://localhost:9090
-# - Grafana: http://localhost:3000 (admin/admin)
-```
-
-### Detener servicios
-```bash
-# Detener Prometheus y Grafana
-docker-compose down
-
-# Detener exporter
-pkill -f metrics_exporter.py
-```
-```
-
-## 🏗️ Arquitectura del Código
-
-### Patrón de Diseño
-
-Este proyecto usa el patrón **Template Method** con una clase base `BaseCheck`:
-```python
-from base_check import BaseCheck
-
-check = BaseCheck("disk")
-check.validate_thresholds(80, 90)
-# ... lógica específica
-exit_code = check.handle_state_change(state, "Disco", "85%")
-```
-
-**Ventajas:**
-- DRY (Don't Repeat Yourself)
-- Fácil de extender (añadir nuevos checks)
-- Lógica común centralizada
-- Cada check es independiente
-
-### Añadir un Nuevo Check
-
-Para crear `network_check.py` (por ejemplo):
-
-1. Importar `BaseCheck`
-2. Implementar lógica específica
-3. Usar `handle_state_change()` para gestionar estado
-4. Listo
-```python
-from base_check import BaseCheck
-import subprocess
-
-check = BaseCheck("network")
-# lógica aquí
-result = subprocess.run(["ping", "-c", "1", "8.8.8.8"], ...)
-# Determinar estado
-exit_code = check.handle_state_change(state, "Latencia", "50ms")
-sys.exit(exit_code)
-```
+---
 
 ## Architecture
 
-Cada check funciona de manera independiente:
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    CRON SCHEDULER                           │
+│                  (Cada 5 minutos)                           │
+└────────────────┬────────────┬────────────┬─────────────────┘
+                 │            │            │
+                 ▼            ▼            ▼
+        ┌────────────┐ ┌────────────┐ ┌────────────┐
+        │disk_check  │ │memory_check│ │ cpu_check  │
+        │   .py      │ │   .py      │ │   .py      │
+        └─────┬──────┘ └─────┬──────┘ └─────┬──────┘
+              │              │              │
+              └──────────────┼──────────────┘
+                             ▼
+                    ┌────────────────┐
+                    │  notifier.py   │
+                    │  (send_alert)  │
+                    └────────┬───────┘
+                             │
+                    ┌────────▼────────┐
+                    │ Discord Webhook │
+                    │  (POST request) │
+                    └────────┬────────┘
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │  Discord Server │
+                    │ #alertas-sistema│
+                    └─────────────────┘
+```
 
-check.py
-  ├── Recolecta métricas del sistema
-  ├── Evalúa umbrales
-  ├── Compara con el último estado
-  ├── Decide si alertar o recuperar
-  ├── Envía notificación
-  └── Guarda el nuevo estado
+### Componentes
 
-El módulo notifier abstrae el envío de alertas
-y permite añadir nuevos canales fácilmente.
+**disk_check.py** — Lee uso de disco con `df -h`, compara contra thresholds, detecta cambios de estado y alerta si es necesario.
 
-## When to use this
+**memory_check.py** — Lee memoria con `free -m`, calcula % disponible, aplica state management y envía alertas de memoria baja.
 
-- Sistemas pequeños
-- Servidores personales
-- Laboratorios
-- Entornos sin herramientas de monitoreo dedicadas
+**cpu_check.py** — Lee CPU con `top -bn1`, extrae % idle con regex, detecta sobrecarga y alerta en cambios.
 
-## Production Readiness Gap Analysis
+**notifier.py** — Clase `Notifier` con `send_discord()` y `send_alert()`. Construye embeds con colores según severidad (azul, amarillo, rojo) y timestamps UTC.
 
-Este proyecto es educativo. Aquí está lo que cambiaría para producción real:
+**base_check.py** — Módulo base con patrón Template Method. Centraliza la lógica común de state management y logging. Cada check hereda de aquí.
 
-### ✅ Lo que YA está production-ready:
+### Flujo de una alerta
 
-1. **State management** - Evita alertas duplicadas (crítico)
-2. **Exit codes** - Siguen estándares de monitoreo
-3. **Logging estructurado** - Parseable, con timestamps
-4. **Separación de concerns** - Fácil mantener
-5. **Métricas Históricas** - Métricas con dashboard visuales
+```
+1. Cron ejecuta disk_check.py
+2. Script lee uso actual: 85%
+3. Lee last_state desde /tmp/disk.state: "OK"
+4. Determina current_state: "WARNING" (85% > 80%)
+5. Detecta cambio: "OK" → "WARNING"
+6. Llama send_alert(title, message, level="WARNING")
+7. notifier.py construye embed JSON
+8. POST a Discord webhook
+9. Discord muestra alerta amarilla ⚠️
+10. Guarda nuevo state: "WARNING" en /tmp/disk.state
+11. Exit code 1 (WARNING)
+```
 
-### ⚠️ Lo que falta para producción:
+---
 
+## Observability Stack
 
-1. **Secrets Management**
-   - **Problema:** Webhook en archivo plano
-   - **Solución:** HashiCorp Vault o AWS Secrets Manager
-   - **Trade-off:** Gratis pero inseguro vs Seguro pero cuesta tiempo/$$
+```
+┌──────────────────┐
+│ metrics_exporter │  → Recolecta métricas del sistema cada 15s
+└────────┬─────────┘
+         │ HTTP :8000/metrics
+         ▼
+┌──────────────────┐
+│   Prometheus     │  → Almacena time-series data
+└────────┬─────────┘
+         │ PromQL queries
+         ▼
+┌──────────────────┐
+│     Grafana      │  → Visualización en dashboards
+└──────────────────┘
+```
 
-2. **Monitoring del Monitoring**
-   - **Problema:** ¿Quién monitorea el monitor? (Deadman's switch)
-   - **Solución:** Heartbeat a servicio externo cada 10 min
-   - **Trade-off:** Complejidad adicional
+### Métricas disponibles
 
-3. **Escalamiento**
-   - **Problema:** Solo monitorea 1 servidor
-   - **Solución:** Agent en cada servidor + collector central
-   - **Trade-off:** Funciona para aprender vs No escala
+| Métrica | Descripción |
+|---|---|
+| `sre_disk_usage_percent` | Uso de disco en porcentaje |
+| `sre_memory_available_percent` | Memoria disponible en porcentaje |
+| `sre_cpu_idle_percent` | CPU idle en porcentaje |
 
-### 🎯 Priorizando:
+### Dashboard
 
-Si tuviera que llevar esto a producción MAÑANA con tiempo limitado:
+El dashboard incluye gráfico de línea de uso de disco con tendencia temporal, gauge de memoria disponible con thresholds de color (rojo < 20%, amarillo 20-40%, verde > 40%), y gráfico de línea de CPU idle.
 
-**Must-have (1-2 días):**
-1. Secrets en variables de entorno (no en archivo)
-2. Deadman's switch (cron job cada 10 min que hace ping a healthchecks.io)
+Ver [docs/GRAFANA.md](docs/GRAFANA.md) para instrucciones de importación del dashboard.
 
-**Nice-to-have (1 semana):**
-3. Runbooks documentados
+---
 
-**Future (1 mes+):**
-4. Multi-server support
-5. Dashboard web
-6. Integración con PagerDuty
+## State Management
 
-### Por Qué Este Orden:
+Cada check guarda su último estado en un archivo en `/tmp`:
 
-- **Secrets primero** - Vulnerabilidad de seguridad obvia
-- **Deadman segundo** - "¿Quién vigila al vigilante?"
+```
+/tmp/
+├── disk.state     →  "OK" | "WARNING" | "CRITICAL"
+├── memory.state   →  "OK" | "WARNING" | "CRITICAL"
+└── cpu.state      →  "OK" | "WARNING" | "CRITICAL"
+```
 
-**Esta priorización NO puede hacerla una IA** - requiere entender:
-- Riesgos de negocio
-- Budget disponible
-- Skills del equipo
-- Urgencia vs importancia
+**Lógica de alertas:**
+- **Alerta:** `last_state != current_state AND current_state != "OK"`
+- **Recovery:** `last_state != "OK" AND current_state == "OK"`
 
+Sin estado, cada ejecución de cron generaría una alerta aunque nada hubiera cambiado. El state management es lo que separa un sistema de alerting real de un script que simplemente comprueba umbrales.
 
-## Installation
+Los archivos en `/tmp` se borran en cada reboot, lo cual es intencionado: el sistema arranca con un estado limpio (OK), sin arrastrar alertas de sesiones anteriores.
+
+---
+
+## Quick Start
 
 ```bash
 git clone https://github.com/Iriome-Santana/sre-monitoring-suite.git
@@ -232,52 +180,145 @@ cd sre-monitoring-suite
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+```
 
+Copiar y configurar variables de entorno:
 
----
+```bash
+cp .env.example .env
+# Editar .env con tus valores
+```
 
-## 🔧 Configuration (MUY IMPORTANTE)
-
-```md
-## Configuration
-
-Las siguientes variables de entorno controlan el comportamiento:
-
-- WARNING: umbral de warning
-- CRITICAL: umbral crítico
-- DISCORD_WEBHOOK: webhook de Discord
-- DISK_PATH: path a monitorear (por defecto /)
-- NOTIFICATIONS_ENABLED: true/false
-- METRICS_PORT = Puerto de las métricas
-- SCRAPE_INTERVAL = Intervalo de tiempo en segundos para escrapear métricas
-
-## Run manually
+Ejecutar un check manualmente:
 
 ```bash
 python src/cpu_check.py
 python src/memory_check.py
 python src/disk_check.py
+```
 
-
----
-
-## ⏱️ Automation (CRON)
-
-```md
-## Automation (cron)
-
-Ejecutar cada 5 minutos:
+Iniciar el stack de observabilidad completo:
 
 ```bash
-*/5 * * * * python3 /path/src/cpu_check.py >> ~/sre/logs/cpu_check.log 2>&1
+# Iniciar exporter de métricas
+python3 src/metrics_exporter.py &
 
+# Iniciar Prometheus y Grafana
+docker-compose up -d
+
+# Servicios disponibles:
+# Métricas raw:   http://localhost:8000/metrics
+# Prometheus UI:  http://localhost:9090
+# Grafana:        http://localhost:3000  (admin/admin)
+```
 
 ---
 
-## 📊 Daily Report
+## Configuration
 
-```md
+Variables de entorno que controlan el comportamiento:
+
+| Variable | Descripción |
+|---|---|
+| `WARNING` | Umbral de warning (porcentaje) |
+| `CRITICAL` | Umbral crítico (porcentaje) |
+| `DISCORD_WEBHOOK` | URL del webhook de Discord |
+| `DISK_PATH` | Path a monitorear (por defecto `/`) |
+| `NOTIFICATIONS_ENABLED` | `true` / `false` |
+| `METRICS_PORT` | Puerto del exporter de métricas |
+| `SCRAPE_INTERVAL` | Intervalo de scraping en segundos |
+
+---
+
+## Automation (cron)
+
+Ejecutar cada 5 minutos con rutas absolutas (requerido para cron):
+
+```bash
+*/5 * * * * python3 /ruta/absoluta/src/cpu_check.py    >> ~/sre/logs/cpu_check.log 2>&1
+*/5 * * * * python3 /ruta/absoluta/src/memory_check.py >> ~/sre/logs/memory_check.log 2>&1
+*/5 * * * * python3 /ruta/absoluta/src/disk_check.py   >> ~/sre/logs/disk_check.log 2>&1
+```
+
+> **Nota:** Cron ejecuta con un directorio de trabajo diferente al shell interactivo. Las rutas relativas no funcionan. Ver [docs/troubleshooting.md](docs/troubleshooting.md#problem-1-cron-no-ejecutaba-los-scripts) para más detalle.
+
+---
+
 ## Daily Report
 
-El script `daily_report.sh` genera un resumen diario
-con métricas agregadas a partir de los logs.
+El script `daily_report.sh` genera un resumen diario con métricas agregadas a partir de los logs. Configurar en cron para ejecución diaria:
+
+```bash
+0 8 * * * /ruta/absoluta/scripts/daily_report.sh >> ~/sre/logs/daily_report.log 2>&1
+```
+
+---
+
+## Architecture Decision Records
+
+### Por qué 3 scripts separados en lugar de 1 script unificado
+
+La alternativa era un único `base_check.py --check disk`. Elegí 3 scripts independientes con un módulo base compartido porque en SRE real se prioriza la observabilidad sobre la compacidad. Si `memory_check` falla, quiero saber exactamente cuál falló sin parsear logs mezclados. Además, permite scheduling independiente: `disk_check` cada 5 minutos, `cpu_check` cada 1 minuto si fuera necesario. Este patrón está presente en Datadog agents, Nagios plugins y Prometheus exporters.
+
+### Por qué state files en /tmp en lugar de base de datos
+
+Para detectar cambios de estado no necesito histórico. SQLite sería overkill y añadiría una dependencia que puede corromperse. Los archivos en `/tmp` son simples, rápidos, sin dependencias, y se limpian solos en cada reboot — lo cual es un feature, no un bug. Si necesitara análisis de tendencias, migraría a Prometheus, que es la herramienta correcta para eso. YAGNI principle.
+
+### Por qué Discord en lugar de PagerDuty
+
+PagerDuty tiene escalation policies y on-call scheduling, pero cuesta dinero y es overkill para un proyecto de aprendizaje individual. Discord da el 80% de lo que necesito (notificaciones en tiempo real, móvil y desktop) con el 5% del esfuerzo. El código está diseñado para que la migración sea trivial cuando sea necesario: un único punto de cambio en `notifier.py`.
+
+### Por qué cron en lugar de systemd timers
+
+Más simple, familiar y funciona en cualquier Linux sin configuración adicional. La mejora natural sería migrar a systemd timers para mejor logging y control de dependencias entre servicios, pero para este caso de uso cron es suficiente.
+
+### Por qué idle CPU en lugar de load average
+
+El idle time refleja directamente la capacidad disponible y es directamente interpretable como porcentaje para alerting. Load average requiere normalizar por número de cores para ser útil, añadiendo complejidad sin beneficio para este caso.
+
+### Por qué variables de entorno para configuración
+
+Siguiendo el principio 12-factor: la configuración que varía entre entornos no debe estar en el código. Los umbrales pueden ser distintos en un servidor de desarrollo y en uno de producción sin tocar una línea de Python.
+
+---
+
+## Production Readiness Gap Analysis
+
+Este proyecto es educacional. Aquí está lo que cambiaría para producción real.
+
+### ✅ Lo que ya está production-ready
+
+State management que evita alertas duplicadas, exit codes que siguen estándares de monitoreo, logging estructurado con timestamps, separación de concerns que facilita el mantenimiento, y métricas históricas con dashboards visuales.
+
+### ⚠️ Lo que falta y cómo priorizarlo
+
+**Must-have (1-2 días):**
+El webhook de Discord está en un archivo de configuración plano. En producción iría a AWS Secrets Manager o HashiCorp Vault. El sistema tampoco tiene deadman's switch: si el propio monitor falla, nadie lo sabe. Un cron job cada 10 minutos que haga ping a healthchecks.io resuelve esto.
+
+**Nice-to-have (1 semana):**
+Runbooks documentados para cada tipo de alerta.
+
+**Futuro (1 mes+):**
+Soporte multi-servidor (agente por servidor + collector central), dashboard web, integración con PagerDuty para on-call real.
+
+**Por qué este orden:** los secrets son una vulnerabilidad de seguridad obvia; el deadman's switch responde a la pregunta "¿quién vigila al vigilante?". Ambos son críticos antes que cualquier feature nuevo.
+
+---
+
+## Further Documentation
+
+| Documento | Contenido |
+|---|---|
+| [docs/troubleshooting.md](docs/troubleshooting.md) | Problemas reales encontrados durante el desarrollo, proceso de debugging paso a paso y metodología de resolución |
+| [docs/GRAFANA.md](docs/GRAFANA.md) | Instrucciones para importar el dashboard y configurar el data source |
+| [docs/TESTING.md](docs/TESTING.md) | Checklist de verificación del stack completo e integration tests |
+
+---
+
+## Author
+
+Built by **Iriome Santana** as part of a self-taught journey into Site Reliability Engineering and DevOps.
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Iriome%20Santana-0077B5?logo=linkedin)](https://www.linkedin.com/in/iriome-santana-socorro)
+
+> 💬 **Feedback welcome.** Si también estás aprendiendo SRE/DevOps y quieres discutir las decisiones de arquitectura, abre un issue o escríbeme en LinkedIn.
