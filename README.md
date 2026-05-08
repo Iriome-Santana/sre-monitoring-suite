@@ -147,6 +147,8 @@ No pretende reemplazar soluciones como Prometheus o Datadog. Fue diseñado para 
 
 El dashboard incluye gráfico de línea de uso de disco con tendencia temporal, gauge de memoria disponible con thresholds de color (rojo < 20%, amarillo 20-40%, verde > 40%), y gráfico de línea de CPU idle.
 
+![Grafana Dashboard](docs/dashboard_monitoring.png)
+
 Ver [docs/GRAFANA.md](docs/GRAFANA.md) para instrucciones de importación del dashboard.
 
 ---
