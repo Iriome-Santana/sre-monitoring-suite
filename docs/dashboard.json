@@ -24,7 +24,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "cfcnz4a9tq8sga"
+        "uid": "efmq4jjr1w8hsa"
       },
       "fieldConfig": {
         "defaults": {
@@ -114,7 +114,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "cfcnz4a9tq8sga"
+            "uid": "efmq4jjr1w8hsa"
           },
           "editorMode": "builder",
           "expr": "sre_disk_usage_percent",
@@ -129,7 +129,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "cfcnz4a9tq8sga"
+        "uid": "efmq4jjr1w8hsa"
       },
       "fieldConfig": {
         "defaults": {
@@ -224,7 +224,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "cfcnz4a9tq8sga"
+        "uid": "efmq4jjr1w8hsa"
       },
       "fieldConfig": {
         "defaults": {
