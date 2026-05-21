@@ -5,7 +5,7 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Coverage](https://img.shields.io/badge/coverage-91%25-brightgreen)
 
-Sistema de monitoreo local desarrollado en Python para supervisar uso de CPU, memoria RAM y disco, con alertas automáticas, gestión de estado para evitar alertas repetidas, tests automatizados con GitHub Actions y métricas conectadas a Prometheus con visualización en Grafana.
+Sistema de monitoreo local desarrollado en Python para supervisar uso de CPU, memoria RAM y disco, con alertas automáticas, gestión de estado para evitar alertas repetidas, tests automatizados con GitHub Actions, métricas conectadas a Prometheus, visualización en Grafana y logs centralizados en Loki.
 
 Proyecto orientado a prácticas reales de Site Reliability Engineering: observabilidad, alerting, automatización y respuesta a incidentes.
 
@@ -46,7 +46,8 @@ No pretende reemplazar soluciones como Prometheus o Datadog. Fue diseñado para 
 - Umbrales configurables vía variables de entorno
 - Gestión de estado para detectar cambios (OK → WARNING → CRITICAL)
 - Alertas y recoveries enviados a Discord
-- Logs detallados por cada ejecución
+- Logs detallados por cada ejecución en formato JSON estructurado
+- Logs centralizados en Loki con filtrado por componente y nivel
 - Reporte diario agregado
 - Limpieza automática de logs antiguos
 - Tests automatizados con pytest y GitHub Actions (91% de cobertura)
@@ -131,9 +132,30 @@ No pretende reemplazar soluciones como Prometheus o Datadog. Fue diseñado para 
          │ PromQL queries
          ▼
 ┌──────────────────┐
-│     Grafana      │  → Visualización en dashboards
+│     Grafana      │  → Visualización en dashboards y logs
 └──────────────────┘
+         ▲
+         │ LogQL queries
+┌────────┴─────────┐
+│      Loki        │  → Almacena y indexa logs por labels
+└────────▲─────────┘
+         │ push logs
+┌────────┴─────────┐
+│    Promtail      │  → Lee archivos de log y los envía a Loki
+└────────▲─────────┘
+         │ lee
+~/sre-monitoring-suite/logs/*.log
 ```
+
+### Servicios
+
+| Servicio | Puerto | Qué hace |
+|---|---|---|
+| metrics_exporter | 8000 | Expone métricas del sistema para Prometheus |
+| Prometheus | 9090 | Almacena métricas en series temporales |
+| Grafana | 3000 | Dashboards de métricas y panel de logs |
+| Loki | 3100 | Almacena y indexa logs por labels |
+| Promtail | 9080 | Agente que lee logs y los envía a Loki |
 
 ### Métricas disponibles
 
@@ -145,11 +167,22 @@ No pretende reemplazar soluciones como Prometheus o Datadog. Fue diseñado para 
 
 ### Dashboard
 
-El dashboard incluye gráfico de línea de uso de disco con tendencia temporal, gauge de memoria disponible con thresholds de color (rojo < 20%, amarillo 20-40%, verde > 40%), y gráfico de línea de CPU idle.
+El dashboard incluye gráfico de línea de uso de disco con tendencia temporal, gauge de memoria disponible con thresholds de color (rojo < 20%, amarillo 20-40%, verde > 40%), gráfico de línea de CPU idle, y panel de logs centralizados de todos los componentes.
 
 ![Grafana Dashboard](docs/dashboard_monitoring.png)
 
 Ver [docs/GRAFANA.md](docs/GRAFANA.md) para instrucciones de importación del dashboard.
+
+### LogQL queries de ejemplo
+
+| Query | Resultado |
+|---|---|
+| `{job="sre-monitoring-suite"}` | Todos los logs |
+| `{job="sre-monitoring-suite", component="disk"}` | Solo logs de disk_check |
+| `{job="sre-monitoring-suite", component="cpu"}` | Solo logs de cpu_check |
+| `{job="sre-monitoring-suite", level="ERROR"}` | Solo errores |
+| `{job="sre-monitoring-suite"} \|= "Estado actual"` | Cambios de estado |
+| `{job="sre-monitoring-suite"} \| json \| level != "INFO"` | Warnings y críticos |
 
 ---
 
@@ -205,13 +238,14 @@ Iniciar el stack de observabilidad completo:
 # Iniciar exporter de métricas
 python3 src/metrics_exporter.py &
 
-# Iniciar Prometheus y Grafana
-docker-compose up -d
+# Iniciar Prometheus, Grafana, Loki y Promtail
+docker compose up -d
 
 # Servicios disponibles:
 # Métricas raw:   http://localhost:8000/metrics
 # Prometheus UI:  http://localhost:9090
 # Grafana:        http://localhost:3000  (admin/admin)
+# Loki:           http://localhost:3100
 ```
 
 ---
@@ -282,6 +316,14 @@ El idle time refleja directamente la capacidad disponible y es directamente inte
 
 Siguiendo el principio 12-factor: la configuración que varía entre entornos no debe estar en el código. Los umbrales pueden ser distintos en un servidor de desarrollo y en uno de producción sin tocar una línea de Python.
 
+### Por qué Loki en lugar de ELK Stack
+
+Elasticsearch + Logstash + Kibana es la solución estándar de mercado para centralización de logs, pero consume recursos significativos y requiere configuración compleja. Loki indexa solo los labels (component, level, job), no el contenido completo de los logs — lo que lo hace extremadamente ligero. Para este caso de uso, donde los logs ya son JSON estructurado y los filtros naturales son por componente y nivel, Loki es la herramienta correcta. ELK tendría sentido si necesitara full-text search sobre el contenido de los mensajes.
+
+### Por qué Promtail en lugar de Fluentd o Logstash
+
+Promtail es el agente nativo de Loki — misma organización, mismo modelo de datos, configuración mínima. Fluentd y Logstash son más potentes pero añaden complejidad sin beneficio aquí. El pipeline_stages de Promtail es suficiente para parsear el JSON y extraer labels.
+
 ---
 
 ## Production Readiness Gap Analysis
@@ -290,7 +332,7 @@ Este proyecto es educacional. Aquí está lo que cambiaría para producción rea
 
 ### ✅ Lo que ya está production-ready
 
-State management que evita alertas duplicadas, exit codes que siguen estándares de monitoreo, logging estructurado con timestamps, separación de concerns que facilita el mantenimiento, y métricas históricas con dashboards visuales.
+State management que evita alertas duplicadas, exit codes que siguen estándares de monitoreo, logging estructurado con timestamps, separación de concerns que facilita el mantenimiento, métricas históricas con dashboards visuales, y logs centralizados con filtrado por componente y nivel.
 
 ### ⚠️ Lo que falta y cómo priorizarlo
 
@@ -298,7 +340,7 @@ State management que evita alertas duplicadas, exit codes que siguen estándares
 El webhook de Discord está en un archivo de configuración plano. En producción iría a AWS Secrets Manager o HashiCorp Vault. El sistema tampoco tiene deadman's switch: si el propio monitor falla, nadie lo sabe. Un cron job cada 10 minutos que haga ping a healthchecks.io resuelve esto.
 
 **Nice-to-have (1 semana):**
-Runbooks documentados para cada tipo de alerta.
+Runbooks documentados para cada tipo de alerta. Alertas en Grafana basadas en queries de Loki para notificar cuando aparecen ERRORs en los logs.
 
 **Futuro (1 mes+):**
 Soporte multi-servidor (agente por servidor + collector central), dashboard web, integración con PagerDuty para on-call real.
@@ -312,7 +354,7 @@ Soporte multi-servidor (agente por servidor + collector central), dashboard web,
 | Documento | Contenido |
 |---|---|
 | [docs/troubleshooting.md](docs/troubleshooting.md) | Problemas reales encontrados durante el desarrollo, proceso de debugging paso a paso y metodología de resolución |
-| [docs/GRAFANA.md](docs/GRAFANA.md) | Instrucciones para importar el dashboard y configurar el data source |
+| [docs/GRAFANA.md](docs/GRAFANA.md) | Instrucciones para importar el dashboard y configurar los data sources |
 | [docs/TESTING.md](docs/TESTING.md) | Checklist de verificación del stack completo e integration tests |
 
 ---
